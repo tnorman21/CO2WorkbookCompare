@@ -20,9 +20,9 @@ match_trees <- function(inv1, inv2) {
 find_mismatches <- function(df) {
   df %>%
     mutate(
-      species_diff = species_fia_code_old != species_fia_code_new,
-      dbh_diff = abs(dbh_in_old - dbh_in_new) > 0.1,  # Small tolerance
-      height_diff = abs(total_height_ft_old - total_height_ft_new) > 0.1
+      species_diff = as.integer(species_fia_code_old != species_fia_code_new),
+      dbh_diff = as.integer(abs(dbh_in_old - dbh_in_new)) > 0.1,  # Small tolerance
+      height_diff = as.integer(abs(total_height_ft_old - total_height_ft_new)) > 0.1
     ) %>%
     filter(species_diff | dbh_diff | height_diff)
 }
@@ -30,7 +30,10 @@ find_mismatches <- function(df) {
 # 5. Rank impact by DBH (proxy for CO2 impact)
 rank_by_impact <- function(df) {
   df %>%
-    mutate(impact_score = pmax(dbh_in_old, dbh_in_new)) %>%
+    mutate(
+      impact_score = (abs(dbh_in_old - dbh_in_new) + abs(total_height_ft_old - total_height_ft_new)),
+      impact_score = ifelse(species_diff == 1, impact_score * 1.5, impact_score)
+      ) %>%
     arrange(desc(impact_score))
 }
 
